@@ -1,9 +1,8 @@
 package ru.javawebinar.topjava.web;
 
-import ru.javawebinar.topjava.dao.MealDao;
-import ru.javawebinar.topjava.dao.MealDaoImpl;
-import ru.javawebinar.topjava.model.Meal;
-import ru.javawebinar.topjava.model.MealWithExceed;
+import ru.javawebinar.topjava.model.UserMeal;
+import ru.javawebinar.topjava.repository.UserMealRepository;
+import ru.javawebinar.topjava.repository.InMemoryUserMealRepository;
 import ru.javawebinar.topjava.util.IdCounter;
 import ru.javawebinar.topjava.util.MealsUtil;
 
@@ -14,19 +13,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class MealServlet extends HttpServlet {
-    private MealDao mealDao;
+    private UserMealRepository mealDao;
 
     private static String INSERT_OR_EDIT = "/meal.jsp";
     private static String LIST_MEAL = "/meals.jsp";
 
     public MealServlet() {
         super();
-        mealDao = new MealDaoImpl();
+        mealDao = new InMemoryUserMealRepository();
     }
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String forward="";
@@ -45,7 +41,7 @@ public class MealServlet extends HttpServlet {
             case "edit":
                 forward = INSERT_OR_EDIT;
                 mealId = Integer.parseInt(request.getParameter("mealId"));
-                Meal meal = mealDao.getById(mealId);
+                UserMeal meal = mealDao.getById(mealId);
                 request.setAttribute("meal", meal);
                 break;
             case "allMeal":
@@ -63,20 +59,19 @@ public class MealServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
         LocalDateTime dateTime = LocalDateTime.parse(request.getParameter("dateTime"));
         String description = request.getParameter("description");
         int calories = Integer.parseInt(request.getParameter("calories"));
 
         String mealId = request.getParameter("mealId");
-        Meal meal;
-        if(mealId == null || mealId.isEmpty()) {
-            meal = new Meal(IdCounter.incrementAndGetCounter(), dateTime, description, calories);
-            mealDao.add(meal);
-        } else {
-            meal = new Meal(Integer.parseInt(mealId), dateTime, description, calories);
-            mealDao.update(meal);
+        UserMeal meal = new UserMeal(dateTime, description, calories);
+
+        if(mealId != "") {
+            meal.setId(Integer.parseInt(mealId));
         }
 
+        mealDao.save(meal);
         RequestDispatcher view = request.getRequestDispatcher(LIST_MEAL);
         request.setAttribute("meals", MealsUtil.convertWithExceeded(mealDao.getAll(), MealsUtil.CALORIES_PERDAY));
         view.forward(request, response);
