@@ -18,6 +18,9 @@ public class DateTimeUtil {
         return value.compareTo(start) >= 0 && value.compareTo(end) <= 0;
     }
 
+    private DateTimeUtil() {
+    }
+
     public static String toString(LocalDateTime ldt) {
         return ldt == null ? "" : ldt.format(DATE_TIME_FORMATTER);
     }
