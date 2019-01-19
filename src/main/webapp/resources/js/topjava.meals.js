@@ -1,26 +1,19 @@
-const ajaxUserUrl = "ajax/admin/users/";
-let userDatatableApi;
+const ajaxMealUrl = "ajax/admin/meals/";
+let mealDatatableApi;
 
-// $(document).ready(function () {
 $(function () {
-    userDatatableApi = $("#datatable").DataTable({
+    mealDatatableApi = $("#datatable").DataTable({
         "paging": false,
         "info": true,
         "columns": [
             {
-                "data": "name"
+                "data": "dateTime"
             },
             {
-                "data": "email"
+                "data": "description"
             },
             {
-                "data": "roles"
-            },
-            {
-                "data": "enabled"
-            },
-            {
-                "data": "registered"
+                "data": "calories"
             },
             {
                 "defaultContent": "Edit",
@@ -43,8 +36,7 @@ $(function () {
 
 function makeEditable() {
     $(".delete").click(function () {
-        var tt = $(this).parents("tr");
-        deleteRow($(this).parents("tr").attr("id"));
+        deleteRow($(this).attr("id"));
     });
 
     $(document).ajaxError(function (event, jqXHR, options, jsExc) {
@@ -62,7 +54,7 @@ function add() {
 
 function deleteRow(id) {
     $.ajax({
-        url: ajaxUserUrl + id,
+        url: ajaxMealUrl + id,
         type: "DELETE"
     }).done(function () {
         updateTable();
@@ -71,8 +63,8 @@ function deleteRow(id) {
 }
 
 function updateTable() {
-    $.get(ajaxUserUrl, function (data) {
-        userDatatableApi.clear().rows.add(data).draw();
+    $.get(ajaxMealUrl, function (data) {
+        mealDatatableApi.clear().rows.add(data).draw();
     });
 }
 
@@ -80,7 +72,7 @@ function save() {
     let form = $("#detailsForm");
     $.ajax({
         type: "POST",
-        url: ajaxUserUrl,
+        url: ajaxMealUrl,
         data: form.serialize()
     }).done(function () {
         $("#editRow").modal("hide");
@@ -89,15 +81,19 @@ function save() {
     });
 }
 
-function check(check) {
-    var checked = check.is(":checked");
-    var id = check.parents("tr").attr("id");
+function filter() {
+    let form = $("#filterForm");
     $.ajax({
         type: "POST",
-        url: ajaxUserUrl + id,
-        data: {'checked': checked}
-    }).done(function () {
-        check.parent().parent().css('text-decoration', checked ? 'none' : 'line-through');
-        successNoty(checked ? "Enabled" : "Disabled");
+        url: ajaxMealUrl + "filter",
+        data: form.serialize()
+    }).done(function (data) {
+        mealDatatableApi.clear().rows.add(data).draw();
+        successNoty("Filtered");
     });
+}
+
+function clearFilters() {
+    document.getElementById("filterForm").reset();
+    updateTable();
 }
